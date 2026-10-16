@@ -1,0 +1,75 @@
+#include <ESP32Servo.h>
+#include <esp_now.h>
+#include <WiFi.h>
+
+typedef struct struct_message {
+  int a;
+  int b;
+} struct_message;
+
+struct_message myData;
+
+const int SERVO_PIN_1 = 5;
+const int SERVO_PIN_2 = 4;
+const int SERVO_PIN_3 = 25;
+const int SERVO_PIN_4 = 22;
+const int SERVO_PIN_5 = 18;
+const int SERVO_PIN_6 = 2;
+
+
+int position = 0;
+int position_avg = 0;
+int position2 = 0;
+int position_avg2 = 0;
+int servo_out = 0;
+int servo_out2 = 0;
+int pot = 0;
+int pot2 = 0;
+
+Servo Base;
+Servo Base_Lift;
+Servo Elbow;
+Servo Arm;
+Servo Wrist;
+Servo Claw;
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+  Base.attach(SERVO_PIN_1);
+  Base_Lift.attach(SERVO_PIN_2);
+  Elbow.attach(SERVO_PIN_3);
+  Arm.attach(SERVO_PIN_4);
+  Wrist.attach(SERVO_PIN_5);
+  Claw.attach(SERVO_PIN_6);
+  esp_now_register_recv_cb(esp_now_recv_cb_t(OnDataRecv));
+}
+
+void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
+  memcpy(&myData, incomingData, sizeof(myData));
+  pot = myData.a;
+  pot2 = myData.b;
+  position = map(pot, 0, 4095, -10, 10);
+  position = (position * 0.2) + (position_avg * 0.8);
+  position_avg = position;
+  if (position == -1) {
+    position = 0;
+  }
+  position2 = map(pot2, 0, 4095, -10, 10);
+  position2 = (position2 * 0.2) + (position_avg2 * 0.8);
+  position_avg2 = position2;
+  if (position2 == -1) {
+    position2 = 0;
+  }
+  Base.write(map(servo_out, -300, 300, 0, 130));
+  Base_Lift.write(map(servo_out2, -300, 300, 0, 130));
+  Elbow.write(-(map(servo_out2, -300, 300, 0, 130) - 130));
+  servo_out = constrain(position + servo_out, -300, 300);
+  servo_out2 = constrain(position2 + servo_out2, -300, 300);
+}
+void loop() {
+}
