@@ -1,0 +1,54 @@
+#include <ESP32Servo.h>
+
+const int SERVO_PIN_1 = 5;
+const int SERVO_PIN_2 = 4;
+const int SERVO_PIN_3 = 25;
+const int SERVO_PIN_4 = 22;
+const int SERVO_PIN_5 = 18;
+const int SERVO_PIN_6 = 2;
+const int pot = 34;
+const int pot2 = 35;
+
+
+int position = 0;
+int position_avg = 0;
+int position2 = 0;
+int position_avg2 = 0;
+int servo_out = 0;
+int servo_out2 = 0;
+
+Servo Base;
+Servo Base_Lift;
+Servo Elbow;
+Servo Arm;
+Servo Wrist;
+Servo Claw;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(pot, INPUT);
+  pinMode(pot2, INPUT);
+  Base.attach(SERVO_PIN_1);
+  Base_Lift.attach(SERVO_PIN_2);
+  Elbow.attach(SERVO_PIN_3);
+  Arm.attach(SERVO_PIN_4);
+  Wrist.attach(SERVO_PIN_5);
+  Claw.attach(SERVO_PIN_6);
+}
+
+void loop() {
+  position = map(analogRead(pot), 0, 4095, -10, 10);
+  position = (position * 0.2) + (position_avg * 0.8);
+  position_avg = position;
+  if (position == -1) {
+    position = 0;
+  }
+  position2 = map(analogRead(pot2), 0, 4095, -10, 10);
+  position2 = (position2 * 0.2) + (position_avg2 * 0.8);
+  position_avg2 = position2;
+  Base.write(map(servo_out, -300, 300, 0, 130));
+  Base_Lift.write(map(servo_out2, -300, 300, 0, 130));
+  Elbow.write(-(map(servo_out2, -300, 300, 0, 130) - 130)); 
+  servo_out = position + servo_out;
+  servo_out2 = position2 + servo_out2;
+}
